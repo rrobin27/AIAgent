@@ -20,7 +20,7 @@ if not GEMINI_API_KEY or not YOUTUBE_API_KEY:
 
 # === Initialize Gemini client ===
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel(model_name="models/gemini-pro")
+model = genai.GenerativeModel(model_name="gemini-1.5-flash")
 
 # === YouTube Search Function ===
 def search_youtube(query):
