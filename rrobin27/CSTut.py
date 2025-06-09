@@ -1,12 +1,12 @@
 # === Streamlit App: CS AI Agent with YouTube + GPT + PDF Upload ===
-# pip install openai google-api-python-client streamlit PyPDF2
+# pip install openai google-api-python-client streamlit PyPDF2 python-dotenv
 
 import os
 import streamlit as st
 from googleapiclient.discovery import build
-import openai
 import PyPDF2
 from dotenv import load_dotenv
+from openai import OpenAI
 
 # === Load environment variables from .env if available ===
 load_dotenv()
@@ -18,7 +18,8 @@ YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 if not OPENAI_API_KEY or not YOUTUBE_API_KEY:
     raise ValueError("Missing API keys. Please set OPENAI_API_KEY and YOUTUBE_API_KEY as environment variables.")
 
-openai.api_key = OPENAI_API_KEY
+# === Initialize OpenAI client ===
+openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 # === YouTube Search Function ===
 def search_youtube(query):
@@ -41,11 +42,11 @@ def search_youtube(query):
 
 # === OpenAI Function ===
 def ask_openai(prompt):
-    response = openai.ChatCompletion.create(
+    chat_completion = openai_client.chat.completions.create(
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}]
     )
-    return response["choices"][0]["message"]["content"]
+    return chat_completion.choices[0].message.content
 
 # === Extract Text from PDF ===
 def extract_text_from_pdf(pdf_file):
@@ -85,4 +86,3 @@ if st.button("Search"):
 
 st.markdown("---")
 st.caption("Created with ❤️ using Streamlit, GPT-4, and YouTube API")
-
