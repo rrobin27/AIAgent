@@ -20,7 +20,7 @@ if not GEMINI_API_KEY or not YOUTUBE_API_KEY:
 
 # === Initialize Gemini client ===
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-pro")
+model = genai.GenerativeModel(model_name="models/gemini-pro")
 
 # === YouTube Search Function ===
 def search_youtube(query):
@@ -41,10 +41,15 @@ def search_youtube(query):
         results.append(video_data)
     return results
 
-# === Gemini Function ===
-def ask_gemini(prompt):
-    response = model.generate_content(prompt)
-    return response.text
+# === Gemini Streaming Function ===
+def ask_gemini_streaming(prompt):
+    response = model.generate_content(prompt, stream=True)
+    output = ""
+    for chunk in response:
+        if chunk.text:
+            output += chunk.text
+            yield chunk.text
+    yield "\n---\n\n✅ Complete."
 
 # === Extract Text from PDF ===
 def extract_text_from_pdf(pdf_file):
@@ -78,9 +83,12 @@ if st.button("Search"):
                 st.markdown(f"[{video['title']}]({video['url']})")
         else:
             full_prompt = f"{custom_context}\n\nQuestion: {query}" if custom_context else f"Explain this computer science concept clearly: {query}"
-            answer = ask_gemini(full_prompt)
             st.subheader("📘 Explanation")
-            st.write(answer)
+            response_placeholder = st.empty()
+            streamed_output = ""
+            for chunk in ask_gemini_streaming(full_prompt):
+                streamed_output += chunk
+                response_placeholder.markdown(streamed_output)
 
 st.markdown("---")
 st.caption("Created with ❤️ using Streamlit, Gemini, and YouTube API")
