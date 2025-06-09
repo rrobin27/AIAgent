@@ -1,25 +1,26 @@
-# === Streamlit App: CS AI Agent with YouTube + GPT + PDF Upload ===
-# pip install openai google-api-python-client streamlit PyPDF2 python-dotenv
+# === Streamlit App: CS AI Agent with YouTube + Gemini + PDF Upload ===
+# pip install google-api-python-client streamlit PyPDF2 python-dotenv google-generativeai
 
 import os
 import streamlit as st
 from googleapiclient.discovery import build
 import PyPDF2
 from dotenv import load_dotenv
-from openai import OpenAI
+import google.generativeai as genai
 
 # === Load environment variables from .env if available ===
 load_dotenv()
 
 # === API Keys (must be stored in environment variables) ===
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
-if not OPENAI_API_KEY or not YOUTUBE_API_KEY:
-    raise ValueError("Missing API keys. Please set OPENAI_API_KEY and YOUTUBE_API_KEY as environment variables.")
+if not GEMINI_API_KEY or not YOUTUBE_API_KEY:
+    raise ValueError("Missing API keys. Please set GEMINI_API_KEY and YOUTUBE_API_KEY as environment variables.")
 
-# === Initialize OpenAI client ===
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+# === Initialize Gemini client ===
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel("gemini-pro")
 
 # === YouTube Search Function ===
 def search_youtube(query):
@@ -40,13 +41,10 @@ def search_youtube(query):
         results.append(video_data)
     return results
 
-# === OpenAI Function ===
-def ask_openai(prompt):
-    chat_completion = openai_client.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return chat_completion.choices[0].message.content
+# === Gemini Function ===
+def ask_gemini(prompt):
+    response = model.generate_content(prompt)
+    return response.text
 
 # === Extract Text from PDF ===
 def extract_text_from_pdf(pdf_file):
@@ -54,7 +52,7 @@ def extract_text_from_pdf(pdf_file):
     text = ""
     for page in pdf_reader.pages:
         text += page.extract_text() or ""
-    return text[:5000]  # limit for OpenAI input size safety
+    return text[:5000]  # limit for input size safety
 
 # === Streamlit UI ===
 st.set_page_config(page_title="CS AI Agent", page_icon="🧠")
@@ -80,9 +78,9 @@ if st.button("Search"):
                 st.markdown(f"[{video['title']}]({video['url']})")
         else:
             full_prompt = f"{custom_context}\n\nQuestion: {query}" if custom_context else f"Explain this computer science concept clearly: {query}"
-            answer = ask_openai(full_prompt)
+            answer = ask_gemini(full_prompt)
             st.subheader("📘 Explanation")
             st.write(answer)
 
 st.markdown("---")
-st.caption("Created with ❤️ using Streamlit, GPT-4, and YouTube API")
+st.caption("Created with ❤️ using Streamlit, Gemini, and YouTube API")
